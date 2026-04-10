@@ -5,7 +5,7 @@ const Onboarding = () =>{
     return (
         <View>
             <Text>Onboarding</Text>
-        
+            <Link href="/">Go Back</Link>
         </View>
     )
 }
