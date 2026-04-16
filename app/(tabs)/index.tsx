@@ -24,9 +24,10 @@ export default function App() {
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >();
+  const trimmedFirstName = user?.firstName?.trim();
 
   const displayName =
-    user?.firstName ||
+    trimmedFirstName ||
     user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
     "there";
 

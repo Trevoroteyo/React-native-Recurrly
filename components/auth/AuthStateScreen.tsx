@@ -1,3 +1,4 @@
+import { PRIMARY_COLOR } from "@/constants/theme";
 import { ActivityIndicator, Text, View } from "react-native";
 
 type AuthStateScreenProps = {
@@ -19,7 +20,7 @@ export default function AuthStateScreen({
             <Text className="auth-chip-text">{eyebrow}</Text>
           </View>
         ) : null}
-        <ActivityIndicator size="large" color="#ea7a53" />
+        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
         <Text className="auth-state-title">{title}</Text>
         <Text className="auth-state-copy">{subtitle}</Text>
       </View>

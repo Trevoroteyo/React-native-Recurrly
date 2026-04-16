@@ -1,6 +1,7 @@
 import { isClerkAPIResponseError } from "@clerk/expo";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const VERIFICATION_CODE_PATTERN = /^\d{6}$/;
 
 export type AuthFieldErrors = Partial<
   Record<"emailAddress" | "password" | "confirmPassword" | "code" | "form", string>
@@ -41,8 +42,12 @@ export const validateConfirmation = (
 };
 
 export const validateCode = (value: string): string | undefined => {
-  if (!value.trim()) return "Enter the verification code from your inbox.";
-  if (value.trim().length < 6) return "Codes are usually 6 digits. Double-check and try again.";
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) return "Enter the verification code from your inbox.";
+  if (!VERIFICATION_CODE_PATTERN.test(normalizedValue)) {
+    return "Enter the 6-digit verification code from your inbox.";
+  }
   return undefined;
 };
 

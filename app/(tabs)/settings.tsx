@@ -1,6 +1,7 @@
 import { useClerk, useUser } from "@clerk/expo";
+import { PRIMARY_COLOR } from "@/constants/theme";
 import {styled} from "nativewind";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Alert, ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 
 const SafeAreaView = styled(RNSafeAreaView)
@@ -9,10 +10,19 @@ const Settings = () => {
   const { signOut } = useClerk();
   const { user, isLoaded } = useUser();
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Failed to sign out", error);
+      Alert.alert("Sign out failed", "Please try again in a moment.");
+    }
+  };
+
   if (!isLoaded) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator size="large" color="#ea7a53" />
+        <ActivityIndicator size="large" color={PRIMARY_COLOR} />
       </SafeAreaView>
     );
   }
@@ -39,7 +49,7 @@ const Settings = () => {
           </Text>
         </View>
 
-        <Pressable className="auth-button" onPress={() => signOut()}>
+        <Pressable className="auth-button" onPress={handleSignOut}>
           <Text className="auth-button-text">Sign out</Text>
         </Pressable>
       </View>

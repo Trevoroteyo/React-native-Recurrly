@@ -10,6 +10,16 @@ import type { TabIconProps } from "@/type";
 
 const tabBar = components.tabBar;
 
+const TabIcon = ({ focused, icon }: TabIconProps) => {
+  return (
+    <View className="tabs-icon">
+      <View className={cn("tabs-pill", focused && "tabs-active")}>
+        <Image source={icon} resizeMode="contain" className="tabs-glyph" />
+      </View>
+    </View>
+  );
+};
+
 const TabLayout = () => {
   const { isLoaded, isSignedIn } = useAuth();
   const insets = useSafeAreaInsets();
@@ -27,16 +37,6 @@ const TabLayout = () => {
   if (!isSignedIn) {
     return <Redirect href="/sign-in" />;
   }
-
-  const TabIcon = ({ focused, icon }: TabIconProps) => {
-    return (
-        <View className="tabs-icon">
-        <View className={cn("tabs-pill", focused && "tabs-active")}>
-          <Image source={icon} resizeMode="contain" className="tabs-glyph" />
-        </View>
-      </View>
-    );
-  };
 
   return (
     <Tabs screenOptions={{ 

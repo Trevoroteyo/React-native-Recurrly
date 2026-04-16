@@ -7,6 +7,10 @@ import {
   validateCode,
   validateEmail,
 } from "@/lib/auth";
+import {
+  runAuthAction,
+  runValidatedAuthAction,
+} from "@/lib/auth-flow";
 import { useSignIn } from "@clerk/expo";
 import { Link, router } from "expo-router";
 import { useState } from "react";
@@ -17,14 +21,12 @@ import {
   View,
 } from "react-native";
 
-const defaultErrors: AuthFieldErrors = {};
-
 export default function SignInScreen() {
   const { signIn } = useSignIn();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const [errors, setErrors] = useState<AuthFieldErrors>(defaultErrors);
+  const [errors, setErrors] = useState<AuthFieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResendingCode, setIsResendingCode] = useState(false);
 
@@ -41,105 +43,93 @@ export default function SignInScreen() {
       password: password ? undefined : "Password is required.",
     };
 
-    if (nextErrors.emailAddress || nextErrors.password) {
-      setErrors(nextErrors);
-      return;
-    }
-
     if (!signIn) return;
 
-    setErrors(defaultErrors);
-    setIsSubmitting(true);
-
-    try {
-      const { error } = await signIn.password({
-        emailAddress: submittedEmail,
-        password,
-      });
-
-      if (error) {
-        setErrors(mapClerkError(error));
-        return;
-      }
-
-      if (signIn.status === "complete") {
-        await signIn.finalize({
-          navigate: () => {
-            router.replace("/(tabs)");
-          },
+    await runValidatedAuthAction({
+      validationErrors: nextErrors,
+      setErrors,
+      setPending: setIsSubmitting,
+      action: async () => {
+        const { error } = await signIn.password({
+          emailAddress: submittedEmail,
+          password,
         });
-        return;
-      }
 
-      if (signIn.status === "needs_client_trust") {
-        await signIn.mfa.sendEmailCode();
-        return;
-      }
+        if (error) {
+          setErrors(mapClerkError(error));
+          return;
+        }
 
-      setErrors({
-        form: "We couldn't complete sign in yet. Please review your details and try again.",
-      });
-    } catch (error) {
-      setErrors(mapClerkError(error));
-    } finally {
-      setIsSubmitting(false);
-    }
+        if (signIn.status === "complete") {
+          await signIn.finalize({
+            navigate: () => {
+              router.replace("/(tabs)");
+            },
+          });
+          return;
+        }
+
+        if (signIn.status === "needs_client_trust") {
+          await signIn.mfa.sendEmailCode();
+          return;
+        }
+
+        setErrors({
+          form: "We couldn't complete sign in yet. Please review your details and try again.",
+        });
+      },
+    });
   };
 
   const handleVerify = async () => {
     const nextCodeError = validateCode(code);
-    if (nextCodeError) {
-      setErrors({ code: nextCodeError });
-      return;
-    }
-
     if (!signIn) return;
 
-    setErrors(defaultErrors);
-    setIsSubmitting(true);
+    await runValidatedAuthAction({
+      validationErrors: { code: nextCodeError },
+      setErrors,
+      setPending: setIsSubmitting,
+      action: async () => {
+        await signIn.mfa.verifyEmailCode({ code: code.trim() });
 
-    try {
-      await signIn.mfa.verifyEmailCode({ code: code.trim() });
+        if (signIn.status === "complete") {
+          await signIn.finalize({
+            navigate: () => {
+              router.replace("/(tabs)");
+            },
+          });
+          return;
+        }
 
-      if (signIn.status === "complete") {
-        await signIn.finalize({
-          navigate: () => {
-            router.replace("/(tabs)");
-          },
+        setErrors({
+          form: "That code did not finish sign in. Request a fresh code and try again.",
         });
-        return;
-      }
-
-      setErrors({
-        form: "That code did not finish sign in. Request a fresh code and try again.",
-      });
-    } catch (error) {
-      setErrors(mapClerkError(error));
-    } finally {
-      setIsSubmitting(false);
-    }
+      },
+    });
   };
 
   const handleResendCode = async () => {
     if (!signIn) return;
 
-    setErrors(defaultErrors);
-    setIsResendingCode(true);
-
-    try {
-      await signIn.mfa.sendEmailCode();
-    } catch (error) {
-      setErrors(mapClerkError(error));
-    } finally {
-      setIsResendingCode(false);
-    }
+    await runAuthAction({
+      setErrors,
+      setPending: setIsResendingCode,
+      action: async () => {
+        await signIn.mfa.sendEmailCode();
+      },
+    });
   };
 
   const handleStartOver = async () => {
     if (!signIn) return;
-    await signIn.reset();
-    setCode("");
-    setErrors(defaultErrors);
+
+    await runAuthAction({
+      setErrors,
+      action: async () => {
+        await signIn.reset();
+        setCode("");
+      },
+    });
   };
 
   return (

@@ -9,6 +9,10 @@ import {
   validateEmail,
   validatePassword,
 } from "@/lib/auth";
+import {
+  runAuthAction,
+  runValidatedAuthAction,
+} from "@/lib/auth-flow";
 import { useAuth, useSignUp } from "@clerk/expo";
 import { Link, Redirect, router } from "expo-router";
 import { useState } from "react";
@@ -19,8 +23,6 @@ import {
   View,
 } from "react-native";
 
-const defaultErrors: AuthFieldErrors = {};
-
 export default function SignUpScreen() {
   const { isSignedIn } = useAuth();
   const { signUp } = useSignUp();
@@ -28,7 +30,7 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [code, setCode] = useState("");
-  const [errors, setErrors] = useState<AuthFieldErrors>(defaultErrors);
+  const [errors, setErrors] = useState<AuthFieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResendingCode, setIsResendingCode] = useState(false);
 
@@ -49,108 +51,96 @@ export default function SignUpScreen() {
       confirmPassword: validateConfirmation(password, confirmPassword),
     };
 
-    if (nextErrors.emailAddress || nextErrors.password || nextErrors.confirmPassword) {
-      setErrors(nextErrors);
-      return;
-    }
-
     if (!signUp) return;
 
-    setErrors(defaultErrors);
-    setIsSubmitting(true);
-
-    try {
-      const { error } = await signUp.password({
-        emailAddress: submittedEmail,
-        password,
-      });
-
-      if (error) {
-        setErrors(mapClerkError(error));
-        return;
-      }
-
-      if (signUp.status === "complete") {
-        await signUp.finalize({
-          navigate: () => {
-            router.replace("/(tabs)");
-          },
+    await runValidatedAuthAction({
+      validationErrors: nextErrors,
+      setErrors,
+      setPending: setIsSubmitting,
+      action: async () => {
+        const { error } = await signUp.password({
+          emailAddress: submittedEmail,
+          password,
         });
-        return;
-      }
 
-      if (
-        signUp.unverifiedFields.includes("email_address") &&
-        signUp.missingFields.length === 0
-      ) {
-        await signUp.verifications.sendEmailCode();
-        return;
-      }
+        if (error) {
+          setErrors(mapClerkError(error));
+          return;
+        }
 
-      setErrors({
-        form: "Your account needs one more step. Please review your details and try again.",
-      });
-    } catch (error) {
-      setErrors(mapClerkError(error));
-    } finally {
-      setIsSubmitting(false);
-    }
+        if (signUp.status === "complete") {
+          await signUp.finalize({
+            navigate: () => {
+              router.replace("/(tabs)");
+            },
+          });
+          return;
+        }
+
+        if (
+          signUp.unverifiedFields.includes("email_address") &&
+          signUp.missingFields.length === 0
+        ) {
+          await signUp.verifications.sendEmailCode();
+          return;
+        }
+
+        setErrors({
+          form: "Your account needs one more step. Please review your details and try again.",
+        });
+      },
+    });
   };
 
   const handleVerify = async () => {
     const nextCodeError = validateCode(code);
-    if (nextCodeError) {
-      setErrors({ code: nextCodeError });
-      return;
-    }
-
     if (!signUp) return;
 
-    setErrors(defaultErrors);
-    setIsSubmitting(true);
+    await runValidatedAuthAction({
+      validationErrors: { code: nextCodeError },
+      setErrors,
+      setPending: setIsSubmitting,
+      action: async () => {
+        await signUp.verifications.verifyEmailCode({ code: code.trim() });
 
-    try {
-      await signUp.verifications.verifyEmailCode({ code: code.trim() });
+        if (signUp.status === "complete") {
+          await signUp.finalize({
+            navigate: () => {
+              router.replace("/(tabs)");
+            },
+          });
+          return;
+        }
 
-      if (signUp.status === "complete") {
-        await signUp.finalize({
-          navigate: () => {
-            router.replace("/(tabs)");
-          },
+        setErrors({
+          form: "Your account still needs attention. Please request a new code and try again.",
         });
-        return;
-      }
-
-      setErrors({
-        form: "Your account still needs attention. Please request a new code and try again.",
-      });
-    } catch (error) {
-      setErrors(mapClerkError(error));
-    } finally {
-      setIsSubmitting(false);
-    }
+      },
+    });
   };
 
   const handleResendCode = async () => {
     if (!signUp) return;
 
-    setErrors(defaultErrors);
-    setIsResendingCode(true);
-
-    try {
-      await signUp.verifications.sendEmailCode();
-    } catch (error) {
-      setErrors(mapClerkError(error));
-    } finally {
-      setIsResendingCode(false);
-    }
+    await runAuthAction({
+      setErrors,
+      setPending: setIsResendingCode,
+      action: async () => {
+        await signUp.verifications.sendEmailCode();
+      },
+    });
   };
 
   const handleStartOver = async () => {
     if (!signUp) return;
-    await signUp.reset();
-    setCode("");
-    setErrors(defaultErrors);
+
+    await runAuthAction({
+      setErrors,
+      action: async () => {
+        await signUp.reset();
+        setCode("");
+      },
+    });
   };
 
   if (signUp?.status === "complete" || isSignedIn) {
