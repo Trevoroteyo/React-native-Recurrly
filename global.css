@@ -243,7 +243,19 @@
     }
 
     .auth-brand-block {
-        @apply mt-2 items-center;
+        @apply mt-2 items-center overflow-hidden rounded-[32px] px-4 pb-2 pt-4;
+    }
+
+    .auth-hero-orb {
+        @apply absolute rounded-full bg-accent/10;
+    }
+
+    .auth-hero-orb-top {
+        @apply -left-10 -top-8 size-32;
+    }
+
+    .auth-hero-orb-bottom {
+        @apply -bottom-10 -right-8 size-36 bg-primary/5;
     }
 
     .auth-logo-wrap {
@@ -275,7 +287,11 @@
     }
 
     .auth-card {
-        @apply mt-8 rounded-3xl border border-border bg-card p-5;
+        @apply mt-8 overflow-hidden rounded-3xl border border-border bg-card p-5;
+    }
+
+    .auth-pattern {
+        @apply absolute inset-0 opacity-10;
     }
 
     .auth-form {
@@ -315,7 +331,7 @@
     }
 
     .auth-button-text {
-        @apply text-base font-sans-bold text-primary;
+        @apply text-base font-sans-bold text-background;
     }
 
     .auth-secondary-button {
@@ -348,6 +364,50 @@
 
     .auth-link {
         @apply text-sm font-sans-bold text-accent;
+    }
+
+    .auth-trust-list {
+        @apply rounded-2xl border border-border bg-background/80 p-4;
+    }
+
+    .auth-trust-item {
+        @apply text-sm font-sans-medium leading-6 text-primary;
+    }
+
+    .auth-status-card {
+        @apply gap-3 rounded-2xl border border-accent/15 bg-accent/8 p-4;
+    }
+
+    .auth-status-title {
+        @apply text-lg font-sans-bold text-primary;
+    }
+
+    .auth-status-copy {
+        @apply text-sm font-sans-medium leading-6 text-muted-foreground;
+    }
+
+    .auth-state-screen {
+        @apply flex-1 items-center justify-center bg-background px-5;
+    }
+
+    .auth-state-card {
+        @apply w-full max-w-[360px] items-center gap-4 rounded-[28px] border border-border bg-card px-6 py-8;
+    }
+
+    .auth-state-title {
+        @apply text-center text-2xl font-sans-bold text-primary;
+    }
+
+    .auth-state-copy {
+        @apply text-center text-sm font-sans-medium leading-6 text-muted-foreground;
+    }
+
+    .auth-chip {
+        @apply self-start rounded-full bg-accent/10 px-3 py-1;
+    }
+
+    .auth-chip-text {
+        @apply text-[11px] font-sans-bold uppercase tracking-[1px] text-accent;
     }
 
     .modal-overlay {

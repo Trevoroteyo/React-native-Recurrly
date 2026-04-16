@@ -12,6 +12,8 @@ export const colors = {
     subscription: "#8fd1bd",
 } as const;
 
+export const PRIMARY_COLOR = colors.accent;
+
 export const spacing = {
     0: 0,
     1: 4,
