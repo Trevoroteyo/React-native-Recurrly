@@ -1,10 +1,10 @@
+import { useUser } from "@clerk/expo";
 import ListingHeading from "@/components/ListHeading";
 import SubscriptionsCard from "@/components/SubscriptionsCard";
 import UpcomingSubscriptionsCard from "@/components/UpcomingSusbcriptionsCard";
 import {
   HOME_BALANCE,
   HOME_SUBSCRIPTIONS,
-  HOME_USER,
   UPCOMING_SUBSCRIPTIONS,
 } from "@/constants/data";
 import { icons } from "@/constants/icons";
@@ -20,9 +20,15 @@ import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 const SafeAreaView = styled(RNSafeAreaView);
 
 export default function App() {
+  const { user } = useUser();
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >();
+
+  const displayName =
+    user?.firstName ||
+    user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
+    "there";
 
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
@@ -35,7 +41,7 @@ export default function App() {
               <View className="home-header">
                 <View className="home-user">
                   <Image source={images.avatar} className="home-avatar" />
-                  <Text className="home-user-name">{HOME_USER.name}</Text>
+                  <Text className="home-user-name">{displayName}</Text>
                 </View>
 
                 <Image source={icons.add} className="home-add-icon" />
