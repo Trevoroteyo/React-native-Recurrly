@@ -2,6 +2,7 @@ import { icons } from "@/constants/icons";
 import dayjs from "dayjs";
 import cn from "clsx";
 import { useEffect, useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -55,6 +56,7 @@ const CreateSubscriptionModal = ({
   onClose,
   onCreate,
 }: CreateSubscriptionModalProps) => {
+  const posthog = usePostHog();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [frequency, setFrequency] =
@@ -112,8 +114,7 @@ const CreateSubscriptionModal = ({
         ? dayjs(startDate).add(1, "year").toISOString()
         : dayjs(startDate).add(1, "month").toISOString();
     const trimmedName = name.trim();
-
-    onCreate({
+    const subscription = {
       id: `${trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`,
       name: trimmedName,
       price: numericPrice,
@@ -127,7 +128,21 @@ const CreateSubscriptionModal = ({
       currency: "USD",
       paymentMethod: "Manual entry",
       color: CATEGORY_COLORS[category],
+    } satisfies Subscription;
+
+    posthog.capture("subscription_created", {
+      subscription_id: subscription.id,
+      subscription_name: subscription.name,
+      price: subscription.price,
+      currency: subscription.currency,
+      frequency: subscription.frequency,
+      billing: subscription.billing,
+      category: subscription.category,
+      status: subscription.status,
+      renewal_date: subscription.renewalDate,
     });
+
+    onCreate(subscription);
 
     handleClose();
   };
