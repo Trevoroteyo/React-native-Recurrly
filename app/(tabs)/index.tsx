@@ -1,29 +1,29 @@
 import { useUser } from "@clerk/expo";
 import ListingHeading from "@/components/ListHeading";
+import CreateSubscriptionModal from "@/components/CreateSubscriptionModal";
 import SubscriptionsCard from "@/components/SubscriptionsCard";
 import UpcomingSubscriptionsCard from "@/components/UpcomingSusbcriptionsCard";
-import {
-  HOME_BALANCE,
-  HOME_SUBSCRIPTIONS,
-  UPCOMING_SUBSCRIPTIONS,
-} from "@/constants/data";
+import { HOME_BALANCE, UPCOMING_SUBSCRIPTIONS } from "@/constants/data";
 import { icons } from "@/constants/icons";
 import images from "@/constants/images";
 import "@/global.css";
+import { useSubscriptions } from "@/lib/subscriptions";
 import { formatCurrency } from "@/lib/utils";
 import dayjs from "dayjs";
 import { styled } from "nativewind";
 import { useState } from "react";
-import { FlatList, Image, Text, View } from "react-native";
+import { FlatList, Image, Pressable, Text, View } from "react-native";
 import { SafeAreaView as RNSafeAreaView } from "react-native-safe-area-context";
 
 const SafeAreaView = styled(RNSafeAreaView);
 
 export default function App() {
   const { user } = useUser();
+  const { subscriptions, addSubscription } = useSubscriptions();
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >();
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const trimmedFirstName = user?.firstName?.trim();
 
   const displayName =
@@ -31,11 +31,14 @@ export default function App() {
     user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
     "there";
 
+  const handleCreateSubscription = (subscription: Subscription) => {
+    addSubscription(subscription);
+    setExpandedSubscriptionId(subscription.id);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background p-5">
       <View>
-        
-
         <FlatList
           ListHeaderComponent={() => (
             <>
@@ -45,7 +48,9 @@ export default function App() {
                   <Text className="home-user-name">{displayName}</Text>
                 </View>
 
-                <Image source={icons.add} className="home-add-icon" />
+                <Pressable onPress={() => setIsCreateModalVisible(true)}>
+                  <Image source={icons.add} className="home-add-icon" />
+                </Pressable>
               </View>
 
               <View className="home-balance-card">
@@ -82,7 +87,7 @@ export default function App() {
               <ListingHeading title="All Subscriptions" />
             </>
           )}
-          data={HOME_SUBSCRIPTIONS}
+          data={subscriptions}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <SubscriptionsCard
@@ -102,6 +107,12 @@ export default function App() {
             <Text className="home-empty">No subscriptions yet.</Text>
           }
           contentContainerClassName="pb-20"
+        />
+
+        <CreateSubscriptionModal
+          visible={isCreateModalVisible}
+          onClose={() => setIsCreateModalVisible(false)}
+          onCreate={handleCreateSubscription}
         />
       </View>
     </SafeAreaView>
